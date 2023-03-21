@@ -1,7 +1,6 @@
 exports.handler = (event, context, callback, intentRequest) => {
 
     if (event.currentIntent.name === "Greetings" && event.invocationSource === "DialogCodeHook") {
-        console.log("Success Hello from Lambda");
         callback(null, {
             "dialogAction": {
                 "type": "Delegate",
@@ -192,7 +191,7 @@ exports.handler = (event, context, callback, intentRequest) => {
                         "version": 0,
                         "genericAttachments": [
                             {
-                            "title": "https://ui.chill.ie/motor/",
+                            "title": "Fill in this form",
                             "subTitle": "https://ui.chill.ie/motor/",
                             'imageUrl': 'https://i.ibb.co/MVwd4vt/1.jpg',
                             'attachmentLinkUrl': 'https://ui.chill.ie/motor/',
