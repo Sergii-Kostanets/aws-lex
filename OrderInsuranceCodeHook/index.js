@@ -14,16 +14,23 @@ exports.handler = (event, context, callback, intentRequest) => {
         
         var validatedTown = validationTown(town, province);
         
+        // const sessionId = event.sessionId + '-' + Date.now();
+        
+        let attempts = event.sessionAttributes && event.sessionAttributes.attempts ? parseInt(event.sessionAttributes.attempts) : 4;
+        
         if (event.invocationSource === "DialogCodeHook") {
             
             if (province == null && town == null) {
                 callback(null, {
+                    "sessionAttributes": {
+                        "attempts": attempts.toString()
+                    },
                     "dialogAction": {
                         "type": "ElicitSlot",
-                        // "message": {
-                        //     "contentType": "PlainText",
-                        //     "content": "Type Province"
-                        // },
+                        "message": {
+                            "contentType": "PlainText",
+                            "content": "What province are you in?"
+                        },
                         "intentName": "AgentConnect",
                         "slots": {     
                             "Province": province,
@@ -34,12 +41,15 @@ exports.handler = (event, context, callback, intentRequest) => {
                 });
             } else if (province != null && town == null) {
                 callback(null, {
+                    "sessionAttributes": {
+                        "attempts": attempts.toString()
+                    },
                     "dialogAction": {
                         "type": "ElicitSlot",
-                        // "message": {
-                        //     "contentType": "PlainText",
-                        //     "content": "Type Town"
-                        // },
+                        "message": {
+                            "contentType": "PlainText",
+                            "content": "In which town are you?"
+                        },
                         "intentName": "AgentConnect",
                         "slots": {     
                             "Province": province,
@@ -49,21 +59,87 @@ exports.handler = (event, context, callback, intentRequest) => {
                     }
                 });
             } else if (!validatedTown) {
-                callback(null, {
-                    "dialogAction": {
-                        "type": "ElicitSlot",
-                        "message": {
-                            "contentType": "PlainText",
-                            "content": "Check "
+                attempts--;
+                if (attempts > 0) {
+                    let message = "Check if the town is correct. You have " + attempts + " attempts left. In which town are you?";
+                    callback(null, {
+                        "sessionAttributes": {
+                            "attempts": attempts.toString()
                         },
-                        "intentName": "AgentConnect",
-                        "slots": {     
-                            "Province": province,
-                            "Town": town
+                        "dialogAction": {
+                            "type": "ElicitSlot",
+                            "message": {
+                                "contentType": "PlainText",
+                                "content": message
+                                // "content": "Check if the town is correct. In which town are you?"
+                            },
+                            "intentName": "AgentConnect",
+                            "slots": {     
+                                "Province": province,
+                                "Town": town
+                            },
+                            "slotToElicit" : "Town"
+                        }
+                    });
+                } else {
+                    
+                    attempts = 4;
+                    callback(null, {
+                        "sessionAttributes": {
+                            "attempts": attempts.toString()
                         },
-                        "slotToElicit" : "Town"
-                    }
-                });
+                        "dialogAction": {
+                            "type": "Delegate",
+                            "slots": {     
+                                "Province": province,
+                                "Town": town
+                            }
+                        }
+                    });
+
+                    // attempts = 4;
+                    // callback(null, {
+                    //     "sessionAttributes": {
+                    //         "attempts": attempts.toString()
+                    //     },
+                    //     "dialogAction": {
+                    //         "type": "Close",
+                    //         "fulfillmentState": "Failed",
+                    //         "message": {
+                    //             "contentType": "PlainText",
+                    //             "content": "Sorry, I could not validate your town. What else can I help you with?"
+                    //         },
+                    //         "responseCard": {
+                    //             "contentType": "application/vnd.amazonaws.card.generic",
+                    //             "version": 1,
+                    //             "genericAttachments": [
+                    //                 {
+                    //                     "title": "Fill in this form",
+                    //                     "subTitle": "https://ui.chill.ie/motor/",
+                    //                     'imageUrl': 'https://i.ibb.co/MVwd4vt/1.jpg',
+                    //                     'attachmentLinkUrl': 'https://ui.chill.ie/motor/',
+                    //                     "buttons": [
+                    //                         {
+                    //                             "text": "Start over",
+                    //                             "value": "Hello"
+                    //                         },
+                    //                         {
+                    //                             "text": "Full test",
+                    //                             "value": "I need New Home insurance in Dublin for Joe Brown on joe.brown@gmail.com"
+                    //                         },
+                    //                         {
+                    //                             "text": "Agent connect",
+                    //                             "value": "Connect to the agent"
+                    //                         }
+                    //                     ]
+                    //                 }
+                    //             ]
+                    //         }
+                    //     }
+                    // });
+                    
+                    
+                }
             } else if (validatedTown) {
                 callback(null, {
                     "dialogAction": {
@@ -95,11 +171,23 @@ exports.handler = (event, context, callback, intentRequest) => {
                                 "title": "Reconnect",
                                 "subTitle": "Test again",
                                 'imageUrl': 'https://i.ibb.co/MVwd4vt/1.jpg',
-                                'attachmentLinkUrl': 'https://ui.chill.ie/motor',
-                                "buttons": [{
-                                    "text": "Start over (+)",
-                                    "value": "Speak to the person"
-                                    }]
+                                'attachmentLinkUrl': 'https://www.youtube.com/',
+                                "buttons": [
+                                    {
+                                        "text": "Start over (+)",
+                                        "value": "Speak to the person"
+                                    },
+                                    // {
+                                    //   "type": "web_url",
+                                    //   "url": "https://www.google.com/",
+                                    //   "title": "MFQ"
+                                    // },
+                                    // {
+                                    //     "text": "MFQ",
+                                    //     "value": "https://ui.chill.ie/motor",
+                                    //     "type": "web_url"
+                                    // }
+                                ]
                             }]
                         }// "responseCard": {
                     }
@@ -118,12 +206,15 @@ exports.handler = (event, context, callback, intentRequest) => {
                             "version": 1,
                             "genericAttachments": [
                                 {
-                                // "title": "Reconnect",
-                                // "subTitle": "Test again",
+                                "title": "Reconnect",
+                                "subTitle": "Test again",
                                 "buttons": [{
                                     "text": "Start over (-)",
                                     "value": "Connect to the agent"
-                                    }]
+                                    },{
+                                    "text": "Start from scratch (-)",
+                                    "value": "Hello"
+                                    },]
                             }]
                         }// "responseCard": {
                     }
@@ -188,7 +279,7 @@ exports.handler = (event, context, callback, intentRequest) => {
                     },
                     "responseCard": {
                         "contentType": "application/vnd.amazonaws.card.generic",
-                        "version": 0,
+                        "version": 1,
                         "genericAttachments": [
                             {
                             "title": "Fill in this form",
